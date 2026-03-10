@@ -1,0 +1,23 @@
+{
+  "name": "gestion-scolaire-frontend",
+  "version": "1.0.0",
+  "description": "Frontend pour le système de gestion scolaire",
+  "scripts": {
+    "dev": "vite",
+    "dev:chrome": "BROWSER=google-chrome vite",
+    "dev:cursor": "BROWSER=none vite",
+    "dev:firefox": "BROWSER=firefox vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.5",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.0",
+    "vite": "^5.0.5"
+  }
+}

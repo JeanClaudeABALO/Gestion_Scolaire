@@ -1,0 +1,25 @@
+# Dépendances
+node_modules/
+
+# Fichiers d'environnement (ne jamais commiter les secrets)
+.env
+.env.local
+.env.*.local
+
+# Builds
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Système
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
