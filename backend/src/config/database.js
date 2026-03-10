@@ -1,8 +1,7 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-const isLocal = (process.env.DB_HOST || 'localhost') === 'localhost';
-const useSSL = process.env.DB_SSL === 'true' || !isLocal;
+const useSSL = process.env.DB_SSL === 'true';
 
 const poolConfig = {
   host: process.env.DB_HOST || 'localhost',
@@ -17,9 +16,8 @@ const poolConfig = {
 
 
 if (useSSL) {
-  poolConfig.ssl = { rejectUnauthorized: true };
+  poolConfig.ssl = { rejectUnauthorized: false };
 }
-
 const pool = mysql.createPool(poolConfig);
 
 // Test de connexion
