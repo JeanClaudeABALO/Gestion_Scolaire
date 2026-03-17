@@ -1,70 +1,81 @@
 <template>
-  <div class="login-page">
-    <!-- Header léger -->
-    <header class="login-header">
-      <div class="header-content">
-        <button @click="goToHome" class="btn-home">
-          <Icon name="arrow-left" :size="18" class="home-icon" />
+  <div class="auth-page">
+    <header class="auth-header">
+      <div class="auth-header-inner">
+        <button type="button" class="auth-back" @click="goToHome">
+          <Icon name="arrow-left" :size="18" />
           Retour à l'accueil
         </button>
-        <div class="header-logo">
-          <Icon name="book" :size="24" class="logo-icon" />
-          <span class="logo-text">Gestion Scolaire</span>
+        <div class="auth-brand">
+          <Icon name="book" :size="22" />
+          <span>Gestion Scolaire</span>
         </div>
+        <router-link to="/inscription" class="auth-header-link">Inscription</router-link>
       </div>
     </header>
 
-    <!-- Fond avec image + carte centrée -->
-    <div class="login-bg">
-      <div class="login-wrapper">
-        <div class="login-card">
-          <!-- Panneau gauche : illustration / branding bleu ciel -->
-          <div class="login-card-left">
-            <div class="left-content">
-              <Icon name="book" :size="72" class="left-icon" />
-              <h2 class="left-title">Gestion Scolaire</h2>
-              <p class="left-subtitle">Système de gestion des notes. Centralisez les évaluations, suivez la progression des élèves et facilitez la communication avec les familles.</p>
+    <div class="auth-bg" />
+    <div class="auth-shell">
+      <div class="auth-card">
+        <section class="auth-left">
+          <div class="auth-left-inner">
+            <h2 class="auth-left-title">Welcome Back!</h2>
+            <p class="auth-left-subtitle">Connectez-vous pour accéder à vos espaces (Professeur, Responsable, Parent).</p>
+            <button type="button" class="auth-left-btn" @click="goToHome">
+              Accueil
+            </button>
+          </div>
+        </section>
+
+        <section class="auth-right">
+          <div class="auth-right-top">
+            <h3 class="auth-right-title">Connexion</h3>
+            <div class="auth-social">
+              <button class="social-btn" type="button" aria-label="Google" title="Google">G</button>
+              <button class="social-btn" type="button" aria-label="Facebook" title="Facebook">f</button>
+              <button class="social-btn" type="button" aria-label="GitHub" title="GitHub">⌂</button>
+              <button class="social-btn" type="button" aria-label="LinkedIn" title="LinkedIn">in</button>
             </div>
+            <p class="auth-or">ou utilisez votre code d'accès</p>
           </div>
 
-          <!-- Panneau droit : formulaire -->
-          <div class="login-card-right">
-            <div class="welcome-banner">Bienvenue</div>
-            <h3 class="form-title">Connectez-vous à votre compte</h3>
+          <form @submit.prevent="handleLogin" class="auth-form">
+            <label class="auth-label">Code d'accès</label>
+            <input
+              v-model="code"
+              type="text"
+              placeholder="Code professeur ou code secret élève"
+              required
+              autofocus
+              class="auth-input"
+              :disabled="loading"
+            />
 
-            <form @submit.prevent="handleLogin" class="login-form">
-              <div class="form-group">
-                <label>Code d'accès</label>
-                <input
-                  v-model="code"
-                  type="text"
-                  placeholder="Entrez votre code d'accès"
-                  required
-                  autofocus
-                  class="code-input"
-                  :disabled="loading"
-                />
-                <small class="form-hint">Code professeur ou code secret élève</small>
-              </div>
+            <p class="auth-hint">Astuce : les parents utilisent le code secret de l'élève.</p>
 
-              <div v-if="error" class="error-message">
-                <Icon name="warning" :size="18" class="error-icon" />
-                {{ error }}
-              </div>
+            <div v-if="error" class="auth-error">
+              {{ error }}
+            </div>
 
-              <button type="submit" class="btn-login" :disabled="loading">
-                <span v-if="loading" class="spinner"></span>
-                <span v-else>Se connecter</span>
-              </button>
-            </form>
+            <button type="submit" class="auth-submit" :disabled="loading">
+              <span v-if="loading" class="spinner"></span>
+              <span v-else>SE CONNECTER</span>
+            </button>
+          </form>
 
-            <router-link to="/inscription" class="btn-create-account">
-              Créer un compte professeur
-            </router-link>
+          <div class="auth-links">
+            <router-link to="/inscription" class="auth-link">Créer un compte professeur</router-link>
+            <button type="button" class="auth-link auth-link-secondary" @click="goToHome">Retour à l'accueil</button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
+
+    <footer class="auth-footer">
+      <div class="auth-footer-inner">
+        <p>&copy; 2024 Système de Gestion Scolaire. Tous droits réservés.</p>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -118,226 +129,259 @@ export default {
 </script>
 
 <style scoped>
-.login-page {
+.auth-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* Header bleu ciel, largeur augmentée */
-.login-header {
-  background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 14px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.auth-header {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 60%, #0d47a1 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
-.header-content {
-  max-width: 1400px;
+.auth-header-inner {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 14px 18px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.btn-home {
-  display: flex;
+.auth-back {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.12);
   color: white;
-  transition: all 0.25s;
+  cursor: pointer;
+  font-weight: 700;
 }
 
-.btn-home:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: white;
+.auth-back:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.header-logo {
-  display: flex;
+.auth-brand {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   color: white;
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 800;
 }
 
-.logo-icon { font-size: 24px; color: white; }
-
-.logo-text {
+.auth-header-link {
   color: white;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.10);
 }
 
-/* Fond avec image */
-.login-bg {
-  flex: 1;
-  min-height: calc(100vh - 56px);
-  background-color: #87ceeb;
-  background-image: url('/hero-bg.jpg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+.auth-header-link:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.login-wrapper {
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(30, 136, 229, 0.18) 0%, transparent 55%),
+              radial-gradient(circle at 70% 70%, rgba(13, 71, 161, 0.16) 0%, transparent 60%),
+              linear-gradient(135deg, #eef7ff 0%, #f7fbff 45%, #ffffff 100%);
+  z-index: 0;
+}
+
+.auth-shell {
   width: 100%;
-  max-width: 920px;
+  max-width: 980px;
+  position: relative;
+  z-index: 1;
+  margin: auto;
+  padding: 32px 16px;
 }
 
-/* Carte à deux colonnes, bords très arrondis */
-.login-card {
-  display: flex;
+.auth-card {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
   background: white;
-  border-radius: 24px;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
   overflow: hidden;
-  min-height: 480px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+  min-height: 520px;
 }
 
-/* Panneau gauche bleu ciel */
-.login-card-left {
-  width: 42%;
-  min-width: 280px;
-  background: linear-gradient(160deg, #5dade2 0%, #3498db 100%);
+.auth-left {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 55%, #0d47a1 100%);
+  position: relative;
   padding: 48px 40px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-.left-content {
-  color: white;
+.auth-left::after {
+  display: none; /* bande latérale supprimée pour ne pas masquer le contenu */
+}
+
+.auth-left-inner {
+  position: relative;
+  z-index: 1;
   text-align: center;
-}
-
-.left-icon {
-  opacity: 0.95;
-  margin-bottom: 24px;
-}
-
-.left-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin: 0 0 16px 0;
   color: white;
+  max-width: 320px;
 }
 
-.left-subtitle {
+.auth-left-title {
+  margin: 0 0 12px 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.auth-left-subtitle {
+  margin: 0 0 24px 0;
   font-size: 0.95rem;
   line-height: 1.6;
   opacity: 0.92;
-  margin: 0;
 }
 
-/* Panneau droit formulaire */
-.login-card-right {
-  flex: 1;
-  padding: 40px 48px 32px;
-  display: flex;
-  flex-direction: column;
-}
-
-.welcome-banner {
-  background: linear-gradient(135deg, #7ec8e3 0%, #5dade2 100%);
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 10px 20px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  align-self: flex-start;
-}
-
-.form-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0 0 28px 0;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 600;
-  color: #34495e;
-  font-size: 14px;
-}
-
-.code-input {
-  padding: 14px 0 10px;
-  border: none;
-  border-bottom: 2px solid #e0e0e0;
-  font-size: 16px;
+.auth-left-btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   background: transparent;
-  transition: border-color 0.25s, box-shadow 0.25s;
-}
-
-.code-input:focus {
-  outline: none;
-  border-bottom-color: #5dade2;
-  box-shadow: 0 2px 0 0 #5dade2;
-}
-
-.code-input::placeholder {
-  color: #bdc3c7;
-}
-
-.code-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.form-hint {
-  color: #95a5a6;
-  font-size: 12px;
-  margin-top: 2px;
-}
-
-.btn-login {
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
   color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-top: 8px;
-  box-shadow: 0 4px 14px rgba(52, 152, 219, 0.4);
+  transition: transform 0.2s, background 0.2s;
 }
 
-.btn-login:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.45);
+.auth-left-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
-.btn-login:disabled {
-  opacity: 0.7;
+.auth-right {
+  padding: 44px 52px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-right-title {
+  margin: 0 0 12px 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1f2937;
+  text-align: center;
+}
+
+.auth-social {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+.social-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.social-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+}
+
+.auth-or {
+  margin: 0 0 18px 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fbfdff;
+}
+
+.auth-input:focus {
+  border-color: #1565c0;
+  box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.16);
+}
+
+.auth-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.auth-error {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdecec;
+  color: #b42318;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.auth-submit {
+  margin-top: 6px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  box-shadow: 0 10px 26px rgba(13, 71, 161, 0.22);
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(13, 71, 161, 0.26);
+}
+
+.auth-submit:disabled {
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
@@ -345,8 +389,8 @@ export default {
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   vertical-align: middle;
@@ -357,60 +401,63 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-.error-message {
-  padding: 12px 16px;
-  background: #fde8e8;
-  color: #c0392b;
-  border-radius: 10px;
+.auth-links {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 500;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.btn-create-account {
-  margin-top: auto;
-  padding-top: 24px;
-  background: none;
-  border: none;
-  color: #3498db;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+.auth-link {
+  color: #1565c0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-link:hover {
   text-decoration: underline;
-  text-align: left;
-  transition: color 0.2s;
 }
 
-.btn-create-account:hover {
-  color: #2980b9;
+.auth-link-secondary {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
-/* Responsive : une colonne sur petit écran */
-@media (max-width: 768px) {
-  .login-card {
-    flex-direction: column;
+.auth-footer {
+  position: relative;
+  z-index: 2;
+  background: #0b2f6b;
+  color: white;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.auth-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+@media (max-width: 820px) {
+  .auth-card {
+    grid-template-columns: 1fr;
     min-height: auto;
   }
 
-  .login-card-left {
-    width: 100%;
-    min-width: 0;
-    padding: 32px 24px;
+  .auth-left {
+    padding: 40px 24px;
   }
 
-  .left-icon { font-size: 56px; }
-  .left-title { font-size: 1.5rem; }
-  .left-subtitle { font-size: 0.9rem; }
-
-  .login-card-right {
-    padding: 32px 24px;
+  .auth-left::after {
+    display: none;
   }
 
-  .login-bg {
-    background-image: url('/hero-bg.jpg.jpg');
+  .auth-right {
+    padding: 36px 24px 28px;
   }
 }
 </style>

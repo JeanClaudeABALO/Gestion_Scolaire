@@ -6,8 +6,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS : en production, autoriser l'origine du frontend (ex. http://localhost pour Docker)
-const corsOrigin = process.env.CORS_ORIGIN || true;
+// CORS : en dev accepter tout (localhost:5173, 5174, etc.), en prod utiliser CORS_ORIGIN
+const isProduction = process.env.NODE_ENV === 'production';
+const corsOrigin = isProduction ? (process.env.CORS_ORIGIN || true) : true;
 app.use(cors({ origin: corsOrigin }));
 
 // Middleware pour parser le body JSON (sauf pour les routes d'upload)

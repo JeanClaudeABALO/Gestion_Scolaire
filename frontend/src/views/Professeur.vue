@@ -753,25 +753,29 @@ export default {
 }
 
 .matieres-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(260px, 1fr)); /* 3 cards par ligne sur desktop */
+  gap: 24px;
+  max-width: 1200px;
+  margin: 24px auto 0;
 }
 
 .matiere-card {
-  background: #f8f9fa;
-  padding: 18px;
-  border-radius: 8px;
+  background: #ffffff;
+  padding: 22px 20px;
+  border-radius: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  transition: all 0.3s;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .matiere-card-text {
   position: relative;
-  padding-left: 12px;
+  padding-left: 16px;
 }
 
 .matiere-card-text::before {
@@ -781,17 +785,18 @@ export default {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: #3498db;
-  border-radius: 0 2px 2px 0;
+  background: var(--primary-500);
+  border-radius: 999px;
 }
 
 .matiere-card:hover {
-  background: #e9ecef;
-  transform: translateX(5px);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+  border-color: rgba(37, 99, 235, 0.35);
 }
 
 .btn-icon {
-  background: #3498db;
+  background: var(--primary-600);
   color: white;
   border: none;
   border-radius: 50%;
@@ -802,6 +807,18 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .matieres-list {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .matieres-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .table-container {

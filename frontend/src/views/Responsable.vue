@@ -306,23 +306,34 @@
           <div v-if="loading" class="loading">Chargement...</div>
           <div v-else-if="matieres.length === 0" class="empty">Aucune matière</div>
           <div v-else>
-            <div v-for="group in matieresByClasse" :key="group.classe" class="classe-section">
+            <div v-for="group in matieresByClasse" :key="group.classe" class="classe-section matieres-classe-section">
               <h3 class="classe-title">{{ group.classe }}</h3>
-              <div class="table-container">
-                <table class="table-section">
-                  <thead>
-                    <tr>
-                      <th>Matière</th>
-                      <th>Professeur</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="matiere in group.matieres" :key="matiere.id">
-                      <td>{{ matiere.nom }}</td>
-                      <td>{{ matiere.professeur_prenom }} {{ matiere.professeur_nom }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="matieres-grid">
+                <article
+                  v-for="matiere in group.matieres"
+                  :key="matiere.id"
+                  class="matiere-card matiere-card--responsable"
+                >
+                  <div class="matiere-card-main">
+                    <h3 class="matiere-name">{{ matiere.nom }}</h3>
+                    <p class="matiere-prof">
+                      <span class="label">Professeur :</span>
+                      <span class="value">
+                        {{ matiere.professeur_prenom || 'Non attribué' }}
+                        {{ matiere.professeur_nom || '' }}
+                      </span>
+                    </p>
+                    <p class="matiere-info">
+                      <span class="pill pill--classe">{{ group.classe }}</span>
+                      <span v-if="!matiere.professeur_prenom" class="pill pill--warn">À affecter</span>
+                    </p>
+                  </div>
+                  <div class="matiere-card-actions">
+                    <button type="button" class="pill pill--action" @click="openEditMatiereModal(matiere)">
+                      Gérer
+                    </button>
+                  </div>
+                </article>
               </div>
             </div>
           </div>
@@ -2468,42 +2479,114 @@ th {
   box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
-.matieres-list {
+.matieres-classe-section {
+  padding-bottom: 8px;
+}
+
+.matieres-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.matiere-card--responsable {
+  background: #ffffff;
+  padding: 20px 18px;
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.matiere-card {
-  background: #f8f9fa;
-  padding: 18px;
-  border-radius: 8px;
-  display: flex;
   justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s;
+  min-height: 140px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.matiere-card-text {
-  position: relative;
+.matiere-card--responsable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.matiere-card-main {
   padding-left: 12px;
+  border-left: 4px solid var(--primary-500);
 }
 
-.matiere-card-text::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #3498db;
-  border-radius: 0 2px 2px 0;
+.matiere-name {
+  margin: 0 0 6px 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1f2937;
 }
 
-.matiere-card:hover {
-  background: #e9ecef;
-  transform: translateX(5px);
+.matiere-prof {
+  margin: 0 0 4px 0;
+  font-size: 0.92rem;
+  color: #4b5563;
+}
+
+.matiere-prof .label {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.matiere-prof .value {
+  font-weight: 500;
+}
+
+.matiere-info {
+  margin: 6px 0 0 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.80rem;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.pill--classe {
+  background: rgba(30, 136, 229, 0.08);
+  color: #1565c0;
+}
+
+.pill--warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.pill--action {
+  background: #ffffff;
+  color: #1565c0;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  cursor: pointer;
+}
+
+.pill--action:hover {
+  border-color: #1565c0;
+}
+
+.matiere-card-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1024px) {
+  .matieres-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .matieres-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .btn-icon {

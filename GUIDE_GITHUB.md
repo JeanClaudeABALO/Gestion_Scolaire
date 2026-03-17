@@ -81,7 +81,7 @@ Si GitHub te demande de t’authentifier :
 - Utilise ton **pseudo GitHub** et un **Personal Access Token** (mot de passe) au lieu de ton mot de passe compte.
 - Pour créer un token : GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)** → **Generate new token**.
 
----
+------
 
 ## Récapitulatif des commandes (à adapter)
 

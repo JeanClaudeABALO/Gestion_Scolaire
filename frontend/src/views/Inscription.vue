@@ -1,140 +1,132 @@
 <template>
-  <div class="inscription-page">
-    <!-- Header même style que Connexion -->
-    <header class="inscription-header">
-      <div class="header-content">
-        <button @click="goToHome" class="btn-home">
-          <Icon name="arrow-left" :size="18" class="home-icon" />
+  <div class="auth-page">
+    <header class="auth-header">
+      <div class="auth-header-inner">
+        <button type="button" class="auth-back" @click="goToHome">
+          <Icon name="arrow-left" :size="18" />
           Retour à l'accueil
         </button>
-        <div class="header-logo">
-          <Icon name="book" :size="24" class="logo-icon" />
-          <span class="logo-text">Gestion Scolaire</span>
+        <div class="auth-brand">
+          <Icon name="book" :size="22" />
+          <span>Gestion Scolaire</span>
         </div>
-        <div class="header-nav">
-          <button @click="goToLogin" class="btn-nav-secondary">Connexion</button>
-        </div>
+        <button type="button" class="auth-header-link" @click="goToLogin">Connexion</button>
       </div>
     </header>
 
-    <!-- Fond avec même image que Connexion + carte deux colonnes -->
-    <div class="inscription-bg">
-      <div class="inscription-wrapper">
-        <div class="inscription-card">
-          <!-- Panneau gauche : branding bleu ciel (comme Connexion) -->
-          <div class="inscription-card-left">
-            <div class="left-content">
-              <Icon name="book" :size="72" class="left-icon" />
-              <h2 class="left-title">Inscription Professeur</h2>
-              <p class="left-subtitle">Créez votre compte pour accéder au système. Gérez vos classes, matières et saisissez les notes de vos élèves.</p>
+    <div class="auth-bg" />
+    <div class="auth-shell">
+      <div class="auth-card auth-card--tall">
+        <section class="auth-left">
+          <div class="auth-left-inner">
+            <h2 class="auth-left-title">Create Account</h2>
+            <p class="auth-left-subtitle">Inscrivez-vous pour obtenir votre code d'accès professeur.</p>
+            <button type="button" class="auth-left-btn" @click="goToLogin">
+              Se connecter
+            </button>
+          </div>
+        </section>
+
+        <section class="auth-right">
+          <div class="auth-right-top">
+            <h3 class="auth-right-title">Inscription</h3>
+            <div class="auth-social">
+              <button class="social-btn" type="button" aria-label="Google" title="Google">G</button>
+              <button class="social-btn" type="button" aria-label="Facebook" title="Facebook">f</button>
+              <button class="social-btn" type="button" aria-label="GitHub" title="GitHub">⌂</button>
+              <button class="social-btn" type="button" aria-label="LinkedIn" title="LinkedIn">in</button>
             </div>
+            <p class="auth-or">ou utilisez le formulaire ci-dessous</p>
           </div>
 
-          <!-- Panneau droit : formulaire -->
-          <div class="inscription-card-right">
-            <div class="welcome-banner">Créer un compte</div>
-            <h3 class="form-title">Inscrivez-vous</h3>
+          <template v-if="!codeGenere">
+            <form @submit.prevent="handleInscription" class="auth-form auth-form--grid">
+              <div>
+                <label class="auth-label">Nom</label>
+                <input v-model="form.nom" type="text" class="auth-input" placeholder="Votre nom" required />
+              </div>
+              <div>
+                <label class="auth-label">Prénom(s)</label>
+                <input v-model="form.prenom" type="text" class="auth-input" placeholder="Votre prénom" required />
+              </div>
 
-            <template v-if="!codeGenere">
-              <form @submit.prevent="handleInscription" class="inscription-form">
-                <div class="form-section">
-                  <h4 class="form-section-title">Informations personnelles</h4>
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label>Nom <span class="required">*</span></label>
-                      <input v-model="form.nom" type="text" class="form-input" placeholder="Votre nom" required />
-                    </div>
-                    <div class="form-group">
-                      <label>Prénom(s) <span class="required">*</span></label>
-                      <input v-model="form.prenom" type="text" class="form-input" placeholder="Votre prénom" required />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-section">
-                  <h4 class="form-section-title">Matières enseignées (optionnel)</h4>
-                  <div class="matieres-select-wrapper">
-                    <select v-model="selectedMatiereId" class="form-select-single" @change="onMatiereSelect">
-                      <option value="">Choisir une matière à ajouter...</option>
-                      <option v-for="matiere in matieresRestantes" :key="matiere.id" :value="matiere.id">
-                        {{ matiere.nom }} – {{ matiere.classe_nom }}
-                      </option>
-                    </select>
-                    <div class="matieres-tags" v-if="form.matieres.length > 0">
-                      <span
-                        v-for="id in form.matieres"
-                        :key="id"
-                        class="matiere-tag"
-                      >
-                        {{ labelMatiere(id) }}
-                        <button type="button" class="matiere-tag-remove" @click="removeMatiere(id)" aria-label="Retirer">×</button>
-                      </span>
-                    </div>
-                  </div>
-                  <small class="form-hint">Choisissez une matière dans la liste pour l'ajouter. Vous pouvez en ajouter plusieurs.</small>
-                </div>
-
-                <div class="form-section">
-                  <h4 class="form-section-title">Type de compte</h4>
-                  <div class="role-selection">
-                    <label class="role-option">
-                      <input v-model="form.role" type="radio" value="PROF" class="role-radio" required />
-                      <div class="role-card" :class="{ active: form.role === 'PROF' }">
-                        <Icon name="teacher" :size="36" class="role-icon" />
-                        <div>
-                          <strong>Professeur</strong>
-                          <p>Classes, matières, saisie des notes</p>
-                        </div>
+              <div class="auth-full">
+                <label class="auth-label">Matières enseignées (optionnel)</label>
+                <div class="auth-matieres">
+                  <p v-if="loadingMatieres" class="auth-mini">Chargement des matières...</p>
+                  <p v-else-if="erreurMatieres" class="auth-mini auth-mini-error">
+                    {{ erreurMatieres }}
+                    <button type="button" class="auth-mini-link" @click="loadMatieres">Recharger</button>
+                  </p>
+                  <template v-else>
+                    <p v-if="matieresDisponibles.length === 0" class="auth-mini">
+                      Aucune matière en base.
+                    </p>
+                    <template v-else>
+                      <select v-model="selectedMatiereId" class="auth-select" @change="onMatiereSelect">
+                        <option value="">Choisir une matière à ajouter...</option>
+                        <option v-for="matiere in matieresRestantes" :key="matiere.id" :value="matiere.id">
+                          {{ matiere.nom }} – {{ matiere.classe_nom }}
+                        </option>
+                      </select>
+                      <div class="auth-tags" v-if="form.matieres.length > 0">
+                        <span v-for="id in form.matieres" :key="id" class="auth-tag">
+                          {{ labelMatiere(id) }}
+                          <button type="button" class="auth-tag-x" @click="removeMatiere(id)" aria-label="Retirer">×</button>
+                        </span>
                       </div>
-                    </label>
-                    <label class="role-option">
-                      <input v-model="form.role" type="radio" value="ADMIN" class="role-radio" required />
-                      <div class="role-card" :class="{ active: form.role === 'ADMIN' }">
-                        <Icon name="admin" :size="36" class="role-icon" />
-                        <div>
-                          <strong>Administrateur</strong>
-                          <p>Gestion complète</p>
-                          <small v-if="adminExists" class="role-warning">Un admin existe déjà.</small>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
+                    </template>
+                  </template>
                 </div>
+              </div>
 
-                <div v-if="error" class="error-message">{{ error }}</div>
-
-                <div class="form-actions">
-                  <button type="button" class="btn-cancel" @click="goToHome">Annuler</button>
-                  <button type="submit" class="btn-submit" :disabled="loading">
-                    {{ loading ? 'Inscription...' : 'S\'inscrire' }}
-                  </button>
+              <div class="auth-full">
+                <label class="auth-label">Type de compte</label>
+                <div class="auth-role">
+                  <label class="auth-role-item">
+                    <input v-model="form.role" type="radio" value="PROF" class="auth-radio" required />
+                    <span class="auth-role-pill">Professeur</span>
+                  </label>
+                  <label class="auth-role-item">
+                    <input v-model="form.role" type="radio" value="ADMIN" class="auth-radio" required />
+                    <span class="auth-role-pill">Administrateur</span>
+                    <span v-if="adminExists" class="auth-admin-warn">Un admin existe déjà</span>
+                  </label>
                 </div>
-              </form>
-            </template>
+              </div>
 
-            <!-- Succès + code -->
-            <div v-else class="code-display">
-              <div class="success-icon-wrap">
-                <Icon name="check" :size="48" class="text-success" />
-              </div>
-              <h3 class="code-display-title">Inscription réussie</h3>
-              <p class="success-message">Votre compte a été créé.</p>
-              <div class="code-box">
-                <p class="code-label">Votre code d'accès personnel</p>
-                <div class="code-value">{{ codeGenere }}</div>
-              </div>
-              <div class="code-warning">
-                <strong>Important :</strong> Conservez ce code ; il ne sera plus affiché. En cas d'oubli, contactez le responsable.
-              </div>
-              <div class="code-actions">
-                <button type="button" class="btn-cancel" @click="copyCode">Copier le code</button>
-                <button type="button" class="btn-submit" @click="goToLogin">Se connecter</button>
-              </div>
+              <div v-if="error" class="auth-error auth-full">{{ error }}</div>
+
+              <button type="submit" class="auth-submit auth-full" :disabled="loading">
+                {{ loading ? 'INSCRIPTION...' : 'S\'INSCRIRE' }}
+              </button>
+            </form>
+
+            <div class="auth-links">
+              <button type="button" class="auth-link auth-link-secondary" @click="goToHome">Retour à l'accueil</button>
+              <button type="button" class="auth-link auth-link-secondary" @click="goToLogin">Déjà un compte ?</button>
+            </div>
+          </template>
+
+          <div v-else class="auth-success">
+            <div class="auth-success-title">Inscription réussie</div>
+            <p class="auth-mini">Votre code d'accès personnel :</p>
+            <div class="auth-code">{{ codeGenere }}</div>
+            <p class="auth-mini auth-mini-warn"><strong>Important :</strong> Conservez ce code. Il ne sera plus affiché.</p>
+            <div class="auth-success-actions">
+              <button type="button" class="auth-submit" @click="copyCode">COPIER</button>
+              <button type="button" class="auth-submit auth-submit--ghost" @click="goToLogin">SE CONNECTER</button>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
+
+    <footer class="auth-footer">
+      <div class="auth-footer-inner">
+        <p>&copy; 2024 Système de Gestion Scolaire. Tous droits réservés.</p>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -152,14 +144,16 @@ export default {
     const form = ref({ nom: '', prenom: '', matieres: [], role: 'PROF' })
     const selectedMatiereId = ref('')
     const matieresDisponibles = ref([])
+    const loadingMatieres = ref(true)
+    const erreurMatieres = ref('')
     const loading = ref(false)
     const error = ref('')
     const codeGenere = ref('')
     const adminExists = ref(false)
 
     const matieresRestantes = computed(() => {
-      const ids = form.value.matieres || []
-      return matieresDisponibles.value.filter(m => !ids.includes(m.id))
+      const ids = new Set((form.value.matieres || []).map(id => Number(id)))
+      return matieresDisponibles.value.filter(m => !ids.has(Number(m.id)))
     })
 
     const labelMatiere = (id) => {
@@ -183,12 +177,25 @@ export default {
     }
 
     const loadMatieres = async () => {
+      loadingMatieres.value = true
+      erreurMatieres.value = ''
       try {
         const r = await api.get('/auth/matieres')
-        matieresDisponibles.value = Array.isArray(r.data) ? r.data : []
+        const data = r?.data
+        if (Array.isArray(data)) {
+          matieresDisponibles.value = data
+        } else if (data && Array.isArray(data.matieres)) {
+          matieresDisponibles.value = data.matieres
+        } else {
+          matieresDisponibles.value = []
+        }
       } catch (e) {
         console.error('Erreur chargement matières:', e)
         matieresDisponibles.value = []
+        const msg = e.response?.data?.message || e.message || 'Connexion impossible'
+        erreurMatieres.value = `Impossible de charger les matières (${msg}). Vérifiez que le backend tourne sur http://localhost:5000.`
+      } finally {
+        loadingMatieres.value = false
       }
     }
     const checkAdminExists = async () => {
@@ -229,6 +236,9 @@ export default {
       selectedMatiereId,
       matieresDisponibles,
       matieresRestantes,
+      loadingMatieres,
+      erreurMatieres,
+      loadMatieres,
       labelMatiere,
       onMatiereSelect,
       removeMatiere,
@@ -246,346 +256,489 @@ export default {
 </script>
 
 <style scoped>
-.inscription-page {
+.auth-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* Header même que Connexion */
-.inscription-header {
-  background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 14px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.auth-header {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 60%, #0d47a1 100%);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
 }
 
-.inscription-header .header-content {
-  max-width: 1400px;
+.auth-header-inner {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 40px;
+  padding: 14px 18px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.inscription-header .btn-home {
-  display: flex;
+.auth-back {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.12);
   color: white;
-  transition: all 0.25s;
+  cursor: pointer;
+  font-weight: 700;
 }
 
-.inscription-header .btn-home:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: white;
+.auth-back:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-.inscription-header .header-logo {
-  display: flex;
+.auth-brand {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   color: white;
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 800;
 }
 
-.inscription-header .logo-icon { font-size: 24px; color: white; }
-.inscription-header .logo-text { color: white; }
-
-.btn-nav-secondary {
-  padding: 8px 16px;
-  background: white;
-  color: #3498db;
-  border: none;
-  border-radius: 8px;
+.auth-header-link {
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.10);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.25s;
 }
 
-.btn-nav-secondary:hover {
-  background: rgba(255, 255, 255, 0.9);
-  color: #2980b9;
+.auth-header-link:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* Fond même image que Connexion */
-.inscription-bg {
-  flex: 1;
-  min-height: calc(100vh - 56px);
-  background-color: #87ceeb;
-  background-image: url('/hero-bg.jpg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(30, 136, 229, 0.18) 0%, transparent 55%),
+              radial-gradient(circle at 70% 70%, rgba(13, 71, 161, 0.16) 0%, transparent 60%),
+              linear-gradient(135deg, #eef7ff 0%, #f7fbff 45%, #ffffff 100%);
+  z-index: 0;
+}
+
+.auth-shell {
+  width: 100%;
+  max-width: 1040px;
+  position: relative;
+  z-index: 1;
+  margin: auto;
+  padding: 32px 16px;
+}
+
+.auth-card {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  background: white;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+  min-height: 560px;
+}
+
+.auth-card--tall {
+  min-height: 640px;
+}
+
+.auth-left {
+  background: linear-gradient(135deg, #1e88e5 0%, #1565c0 55%, #0d47a1 100%);
+  position: relative;
+  padding: 48px 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
 }
 
-.inscription-wrapper {
-  width: 100%;
-  max-width: 960px;
+.auth-left::after {
+  display: none; /* bande latérale supprimée pour ne pas masquer le contenu */
 }
 
-.inscription-card {
-  display: flex;
-  background: white;
-  border-radius: 24px;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  min-height: 520px;
-  max-height: 85vh;
+.auth-left-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  max-width: 340px;
 }
 
-.inscription-card-left {
-  width: 38%;
-  min-width: 260px;
-  background: linear-gradient(160deg, #5dade2 0%, #3498db 100%);
-  padding: 40px 36px;
-  display: flex;
-  align-items: center;
+.auth-left-title {
+  margin: 0 0 12px 0;
+  font-size: 2rem;
+  font-weight: 800;
 }
 
-.left-content { color: white; text-align: center; }
-.left-icon { opacity: 0.95; margin-bottom: 20px; }
-.left-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 12px 0; color: white; }
-.left-subtitle { font-size: 0.9rem; line-height: 1.55; opacity: 0.92; margin: 0; }
+.auth-left-subtitle {
+  margin: 0 0 24px 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.92;
+}
 
-.inscription-card-right {
-  flex: 1;
-  padding: 32px 40px 24px;
-  overflow-y: auto;
+.auth-left-btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.auth-left-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.auth-right {
+  padding: 44px 52px 36px;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
-.welcome-banner {
-  background: linear-gradient(135deg, #7ec8e3 0%, #5dade2 100%);
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  padding: 8px 16px;
+.auth-right-title {
+  margin: 0 0 12px 0;
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1f2937;
+  text-align: center;
+}
+
+.auth-social {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+.social-btn {
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
-  margin-bottom: 16px;
-  align-self: flex-start;
-}
-
-.form-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0 0 20px 0;
-}
-
-.inscription-form { display: flex; flex-direction: column; gap: 18px; }
-
-.form-section { margin-bottom: 4px; }
-.form-section-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #7f8c8d;
-  margin-bottom: 10px;
-}
-
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-weight: 600; color: #34495e; font-size: 13px; }
-.required { color: #e74c3c; }
-
-.form-input {
-  padding: 10px 12px;
-  border: none;
-  border-bottom: 2px solid #ecf0f1;
-  font-size: 15px;
-  background: transparent;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  outline: none;
-  border-bottom-color: #5dade2;
-}
-
-.matieres-select-wrapper {
-  border: 2px solid #ecf0f1;
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #fafafa;
-  min-height: 48px;
-}
-
-.form-select-single {
-  width: 100%;
-  padding: 8px 10px;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  color: #2c3e50;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 800;
   cursor: pointer;
-  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.form-select-single:focus {
+.social-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+}
+
+.auth-or {
+  margin: 0 0 18px 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form--grid {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+}
+
+.auth-full {
+  grid-column: 1 / -1;
+}
+
+.auth-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fbfdff;
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  border-color: #1565c0;
+  box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.16);
+}
+
+.auth-select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.98rem;
+  background: #fbfdff;
   outline: none;
 }
 
-.matieres-tags {
+.auth-matieres {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #eef2ff;
+  background: #f9fbff;
+}
+
+.auth-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
 
-.matiere-tag {
+.auth-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: linear-gradient(135deg, #e8f4fc 0%, #d6eaf8 100%);
-  border: 1px solid #3498db;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #2980b9;
-  font-weight: 500;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(30, 136, 229, 0.22);
+  background: rgba(30, 136, 229, 0.08);
+  color: #0d47a1;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
-.matiere-tag-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.auth-tag-x {
   width: 18px;
   height: 18px;
-  padding: 0;
-  border: none;
-  background: rgba(52, 152, 219, 0.2);
-  color: #2980b9;
   border-radius: 50%;
+  border: none;
+  background: rgba(13, 71, 161, 0.16);
+  color: #0d47a1;
   cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  transition: background 0.2s, color 0.2s;
+  line-height: 18px;
+  padding: 0;
+  font-weight: 900;
 }
 
-.matiere-tag-remove:hover {
-  background: #3498db;
-  color: white;
+.auth-tag-x:hover {
+  background: rgba(13, 71, 161, 0.24);
 }
 
-.form-hint { color: #95a5a6; font-size: 11px; margin-top: 8px; }
+.auth-mini {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
 
-.role-selection { display: flex; flex-direction: column; gap: 10px; }
-.role-option { cursor: pointer; }
-.role-radio { display: none; }
+.auth-mini-error {
+  color: #b42318;
+  font-weight: 600;
+}
 
-.role-card {
-  border: 2px solid #ecf0f1;
-  border-radius: 12px;
-  padding: 14px 16px;
+.auth-mini-link {
+  margin-left: 8px;
+  border: none;
+  background: transparent;
+  color: #1565c0;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-mini-warn {
+  color: #7a5c00;
+}
+
+.auth-role {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
   align-items: center;
-  gap: 14px;
-  transition: all 0.2s;
 }
 
-.role-card:hover { border-color: #5dade2; }
-.role-card.active { border-color: #3498db; background: rgba(93, 173, 226, 0.08); }
-.role-icon { color: #3498db; flex-shrink: 0; }
-.role-card strong { display: block; color: #2c3e50; font-size: 0.95rem; }
-.role-card p { margin: 2px 0 0 0; color: #7f8c8d; font-size: 0.85rem; }
-.role-warning { display: block; color: #e74c3c; font-size: 0.8rem; margin-top: 4px; }
-
-.error-message {
-  padding: 10px 14px;
-  background: #fde8e8;
-  color: #c0392b;
-  border-radius: 10px;
-  font-size: 13px;
-}
-
-.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
-
-.btn-cancel {
-  padding: 10px 20px;
-  background: #95a5a6;
-  color: white;
-  border: none;
-  border-radius: 10px;
+.auth-role-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: background 0.2s;
+  position: relative;
 }
 
-.btn-cancel:hover { background: #7f8c8d; }
+.auth-radio {
+  accent-color: #1565c0;
+}
 
-.btn-submit {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
-  color: white;
-  border: none;
+.auth-role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-weight: 800;
+  color: #374151;
+}
+
+.auth-admin-warn {
+  font-size: 0.85rem;
+  color: #b42318;
+  font-weight: 700;
+}
+
+.auth-error {
+  padding: 10px 12px;
   border-radius: 10px;
-  cursor: pointer;
+  background: #fdecec;
+  color: #b42318;
   font-weight: 600;
-  font-size: 14px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 14px rgba(52, 152, 219, 0.35);
+  font-size: 0.95rem;
 }
 
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(52, 152, 219, 0.4);
-}
-
-.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-/* Code display */
-.code-display { text-align: center; padding: 10px 0; }
-.success-icon-wrap { margin-bottom: 12px; }
-.text-success { color: #27ae60; }
-.code-display-title { font-size: 1.25rem; font-weight: 700; color: #27ae60; margin: 0 0 8px 0; }
-.success-message { color: #7f8c8d; font-size: 0.95rem; margin-bottom: 20px; }
-.code-box {
-  background: #f8f9fa;
-  border: 2px solid #3498db;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.code-label { font-weight: 600; color: #2c3e50; margin-bottom: 8px; font-size: 0.95rem; }
-.code-value { font-size: 1.5rem; font-weight: 700; color: #3498db; letter-spacing: 2px; font-family: monospace; word-break: break-all; }
-.code-warning {
-  background: #fff8e6;
-  border: 1px solid #f1c40f;
-  border-radius: 10px;
+.auth-submit {
+  margin-top: 6px;
   padding: 12px 16px;
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-  color: #856404;
-  text-align: left;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  box-shadow: 0 10px 26px rgba(13, 71, 161, 0.22);
 }
-.code-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-@media (max-width: 768px) {
-  .inscription-card { flex-direction: column; max-height: none; min-height: auto; }
-  .inscription-card-left { width: 100%; min-width: 0; padding: 28px 24px; }
-  .inscription-card-right { padding: 24px; }
-  .form-row { grid-template-columns: 1fr; }
-  .inscription-header .header-content { flex-wrap: wrap; gap: 12px; padding: 0 20px; }
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(13, 71, 161, 0.26);
+}
+
+.auth-submit:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.auth-submit--ghost {
+  background: #ffffff;
+  color: #1565c0;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.auth-success {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.auth-success-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #15803d;
+  margin-bottom: 10px;
+}
+
+.auth-code {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-weight: 900;
+  font-size: 1.6rem;
+  letter-spacing: 0.16em;
+  color: #0d47a1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(30, 136, 229, 0.25);
+  background: rgba(30, 136, 229, 0.08);
+  margin: 10px 0 14px;
+}
+
+.auth-success-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.auth-links {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.auth-link {
+  color: #1565c0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-link-secondary {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auth-footer {
+  position: relative;
+  z-index: 2;
+  background: #0b2f6b;
+  color: white;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.auth-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+@media (max-width: 920px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .auth-left {
+    padding: 40px 24px;
+  }
+
+  .auth-left::after {
+    display: none;
+  }
+
+  .auth-right {
+    padding: 36px 24px 28px;
+  }
+
+  .auth-form--grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
