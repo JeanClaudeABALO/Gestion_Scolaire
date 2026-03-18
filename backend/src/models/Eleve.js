@@ -1,6 +1,68 @@
 const db = require('../config/database');
 
 class Eleve {
+  static async ensureMetaTable() {
+    // Créer la table meta si elle n'existe pas encore (évite les 500)
+    await db.execute(
+      `CREATE TABLE IF NOT EXISTS eleves_meta (
+        eleve_id INT PRIMARY KEY,
+        sexe ENUM('F','M') NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (eleve_id) REFERENCES eleves(id)
+          ON DELETE CASCADE
+      )`
+    );
+  }
+
+  static async executeWithMetaFallback(withMetaSql, withoutMetaSql, params = []) {
+    try {
+      const [rows] = await db.execute(withMetaSql, params);
+      return rows;
+    } catch (err) {
+      // Si la table meta n'existe pas encore, ne pas bloquer l'API
+      if (err && err.code === 'ER_NO_SUCH_TABLE' && String(err.sqlMessage || '').includes('eleves_meta')) {
+        const [rows] = await db.execute(withoutMetaSql, params);
+        // Ajouter le champ sexe pour garder une forme stable côté frontend
+        return rows.map(r => ({ ...r, sexe: null }));
+      }
+      throw err;
+    }
+  }
+
+  static normalizeSexe(sexe) {
+    if (sexe === undefined || sexe === null || sexe === '') return null;
+    const s = String(sexe).trim().toUpperCase();
+    if (s === 'F' || s === 'FEMME' || s === 'FEMININ' || s === 'FÉMININ') return 'F';
+    if (s === 'M' || s === 'H' || s === 'HOMME' || s === 'MASCULIN') return 'M';
+    return null;
+  }
+
+  static async setSexe(eleve_id, sexe) {
+    const s = this.normalizeSexe(sexe);
+    // Autoriser null pour "effacer" la valeur
+    try {
+      await db.execute(
+        `INSERT INTO eleves_meta (eleve_id, sexe)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE sexe = VALUES(sexe), updated_at = CURRENT_TIMESTAMP`,
+        [eleve_id, s]
+      );
+    } catch (err) {
+      if (err && err.code === 'ER_NO_SUCH_TABLE' && String(err.sqlMessage || '').includes('eleves_meta')) {
+        await this.ensureMetaTable();
+        await db.execute(
+          `INSERT INTO eleves_meta (eleve_id, sexe)
+           VALUES (?, ?)
+           ON DUPLICATE KEY UPDATE sexe = VALUES(sexe), updated_at = CURRENT_TIMESTAMP`,
+          [eleve_id, s]
+        );
+      } else {
+        throw err;
+      }
+    }
+    return s;
+  }
+
   static async findByCodeSecret(code_secret) {
     const [rows] = await db.execute(
       'SELECT * FROM eleves WHERE code_secret = ?',
@@ -10,7 +72,13 @@ class Eleve {
   }
 
   static async findById(id) {
-    const [rows] = await db.execute(
+    const rows = await this.executeWithMetaFallback(
+      `SELECT e.*, c.nom as classe_nom, f.nom as filiere_nom, em.sexe as sexe
+       FROM eleves e
+       INNER JOIN classes c ON c.id = e.classe_id
+       INNER JOIN filieres f ON f.id = c.filiere_id
+       LEFT JOIN eleves_meta em ON em.eleve_id = e.id
+       WHERE e.id = ?`,
       `SELECT e.*, c.nom as classe_nom, f.nom as filiere_nom
        FROM eleves e
        INNER JOIN classes c ON c.id = e.classe_id
@@ -22,29 +90,47 @@ class Eleve {
   }
 
   static async findAll() {
-    const [rows] = await db.execute(
+    return this.executeWithMetaFallback(
+      `SELECT e.id, e.nom, e.prenom, e.code_secret, e.classe_id, c.nom as classe_nom, em.sexe as sexe
+       FROM eleves e
+       INNER JOIN classes c ON c.id = e.classe_id
+       LEFT JOIN eleves_meta em ON em.eleve_id = e.id
+       ORDER BY c.nom, e.nom, e.prenom`,
       `SELECT e.id, e.nom, e.prenom, e.code_secret, e.classe_id, c.nom as classe_nom
        FROM eleves e
        INNER JOIN classes c ON c.id = e.classe_id
-       ORDER BY c.nom, e.nom, e.prenom`
+       ORDER BY c.nom, e.nom, e.prenom`,
+      []
     );
-    return rows;
   }
 
   static async findByClasse(classe_id) {
-    const [rows] = await db.execute(
+    return this.executeWithMetaFallback(
+      `SELECT e.id, e.nom, e.prenom, e.code_secret, em.sexe as sexe
+       FROM eleves e
+       LEFT JOIN eleves_meta em ON em.eleve_id = e.id
+       WHERE e.classe_id = ?
+       ORDER BY e.nom, e.prenom`,
       `SELECT e.id, e.nom, e.prenom, e.code_secret
        FROM eleves e
        WHERE e.classe_id = ?
        ORDER BY e.nom, e.prenom`,
       [classe_id]
     );
-    return rows;
   }
 
   // Obtenir les élèves d'une classe avec leurs notes pour une matière spécifique
   static async findByClasseWithNotes(classe_id, matiere_id, trimestre) {
-    const [rows] = await db.execute(
+    return this.executeWithMetaFallback(
+      `SELECT e.id, e.nom, e.prenom, e.code_secret, em.sexe as sexe,
+              n.id as note_id, n.valeur, n.type, n.trimestre, n.date_saisie
+       FROM eleves e
+       LEFT JOIN eleves_meta em ON em.eleve_id = e.id
+       LEFT JOIN notes n ON n.eleve_id = e.id 
+         AND n.matiere_id = ? 
+         AND n.trimestre = ?
+       WHERE e.classe_id = ?
+       ORDER BY e.nom, e.prenom, n.type, n.date_saisie`,
       `SELECT e.id, e.nom, e.prenom, e.code_secret,
               n.id as note_id, n.valeur, n.type, n.trimestre, n.date_saisie
        FROM eleves e
@@ -55,7 +141,6 @@ class Eleve {
        ORDER BY e.nom, e.prenom, n.type, n.date_saisie`,
       [matiere_id, trimestre, classe_id]
     );
-    return rows;
   }
 
   static async getNotesByEleve(eleve_id) {
@@ -107,16 +192,17 @@ class Eleve {
               .slice(0, 3)
               .map(n => parseFloat(n.valeur));
 
-            // Calcul de la moyenne des interrogations
+            // Moyenne des interrogations = somme(interros) / nb(interros)
             const sumInterrogations = interrogations.reduce((sum, note) => sum + note, 0);
             const moyenneInterrogations = interrogations.length > 0
               ? (sumInterrogations / interrogations.length).toFixed(2)
               : null;
 
-            // Moyenne générale
-            const toutesNotes = [...interrogations, ...devoirs];
-            const moyenne = toutesNotes.length > 0
-              ? (toutesNotes.reduce((sum, note) => sum + note, 0) / toutesNotes.length).toFixed(2)
+            // Moyenne générale = (moyenneInterrogations + devoir1 + devoir2) / 3
+            const devoir1 = devoirs[0] !== undefined ? devoirs[0] : null;
+            const devoir2 = devoirs[1] !== undefined ? devoirs[1] : null;
+            const moyenne = (moyenneInterrogations !== null && devoir1 !== null && devoir2 !== null)
+              ? ((parseFloat(moyenneInterrogations) + devoir1 + devoir2) / 3).toFixed(2)
               : null;
 
             // Coefficient (par défaut 1)

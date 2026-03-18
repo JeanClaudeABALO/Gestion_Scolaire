@@ -94,7 +94,7 @@ const getElevesWithNotes = async (req, res) => {
     const eleves = await Eleve.findByClasse(classe_id);
     
     // Pour chaque élève, obtenir ses notes pour cette matière et ce trimestre
-    const elevesWithNotes = await Promise.all(
+    let elevesWithNotes = await Promise.all(
       eleves.map(async (eleve) => {
         const notes = await Note.findByEleveMatiereTrimestre(
           eleve.id, 
@@ -115,15 +115,17 @@ const getElevesWithNotes = async (req, res) => {
         const devoirs = notesDevoir.map(n => n.valeur);
         const devoirIds = notesDevoir.map(n => n.id);
 
-        // Calculer la moyenne des interrogations
+        // Moyenne des interrogations = somme(interros) / nb(interros)
         const moyenneInterrogations = interrogations.length > 0
           ? (interrogations.reduce((sum, note) => sum + parseFloat(note), 0) / interrogations.length).toFixed(2)
           : null;
 
-        // Calculer la moyenne générale
-        const toutesNotes = [...interrogations, ...devoirs];
-        const moyenne = toutesNotes.length > 0
-          ? (toutesNotes.reduce((sum, note) => sum + parseFloat(note), 0) / toutesNotes.length).toFixed(2)
+        // Moyenne générale = (moyenneInterrogations + devoir1 + devoir2) / 3
+        // (on suit la règle métier demandée; si une valeur manque, on ne calcule pas)
+        const devoir1 = devoirs[0] !== undefined ? parseFloat(devoirs[0]) : null;
+        const devoir2 = devoirs[1] !== undefined ? parseFloat(devoirs[1]) : null;
+        const moyenne = (moyenneInterrogations !== null && devoir1 !== null && devoir2 !== null)
+          ? ((parseFloat(moyenneInterrogations) + devoir1 + devoir2) / 3).toFixed(2)
           : null;
 
         // Coefficient (par défaut 1, peut être configuré plus tard)
@@ -135,6 +137,7 @@ const getElevesWithNotes = async (req, res) => {
           code: eleve.code_secret,
           nom: eleve.nom,
           prenom: eleve.prenom,
+          sexe: eleve.sexe || null,
           interrogations: [
             interrogations[0] ?? null,
             interrogations[1] ?? null,
@@ -166,6 +169,37 @@ const getElevesWithNotes = async (req, res) => {
         };
       })
     );
+
+    // Calcul du rang dans la matière (par moyenne décroissante)
+    // Règle: rang dense (ex: 1,1,2,3...). Les moyennes null => rang null.
+    const sortedForRank = [...elevesWithNotes]
+      .map(e => ({ id: e.id, score: e.moyenne !== null ? parseFloat(e.moyenne) : null }))
+      .sort((a, b) => {
+        if (a.score === null && b.score === null) return 0;
+        if (a.score === null) return 1;
+        if (b.score === null) return -1;
+        return b.score - a.score;
+      });
+
+    const rankById = new Map();
+    let currentRank = 0;
+    let lastScore = null;
+    for (const item of sortedForRank) {
+      if (item.score === null) {
+        rankById.set(item.id, null);
+        continue;
+      }
+      if (lastScore === null || item.score < lastScore) {
+        currentRank += 1;
+        lastScore = item.score;
+      }
+      rankById.set(item.id, currentRank);
+    }
+
+    elevesWithNotes = elevesWithNotes.map(e => ({
+      ...e,
+      rang: rankById.get(e.id) ?? null
+    }));
 
     res.json(elevesWithNotes);
   } catch (error) {

@@ -191,7 +191,7 @@ const getAllFilieres = async (req, res) => {
 // Créer un nouvel élève
 const createEleve = async (req, res) => {
   try {
-    const { nom, prenom, classe_id } = req.body;
+    const { nom, prenom, classe_id, sexe } = req.body;
 
     // Validation
     if (!nom || !prenom || !classe_id) {
@@ -206,6 +206,9 @@ const createEleve = async (req, res) => {
 
     // Créer l'élève (le code secret sera généré automatiquement)
     const result = await Eleve.create(nom, prenom, classe_id);
+    if (sexe !== undefined) {
+      await Eleve.setSexe(result.id, sexe);
+    }
     const newEleve = await Eleve.findById(result.id);
 
     res.status(201).json({ 
@@ -223,7 +226,7 @@ const createEleve = async (req, res) => {
 const updateEleve = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nom, prenom, classe_id } = req.body;
+    const { nom, prenom, classe_id, sexe } = req.body;
 
     if (!nom || !prenom || !classe_id) {
       return res.status(400).json({ message: 'Le nom, le prénom et la classe sont requis' });
@@ -240,6 +243,9 @@ const updateEleve = async (req, res) => {
     }
 
     await Eleve.update(id, { nom: nom.trim(), prenom: prenom.trim(), classe_id });
+    if (sexe !== undefined) {
+      await Eleve.setSexe(id, sexe);
+    }
     const eleveUpdated = await Eleve.findById(id);
 
     res.json({

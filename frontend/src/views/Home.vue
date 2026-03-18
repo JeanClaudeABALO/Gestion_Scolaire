@@ -473,9 +473,62 @@ export default {
 
 .session-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(260px, 1fr)); /* 3 cards par ligne sur desktop */
   gap: 24px;
   text-align: left;
+}
+
+/* Session Fonctionnalités : cards un peu plus compactes */
+.session--bg-features .card {
+  padding: 28px 20px;
+  border-radius: 14px;
+  min-height: 210px;
+}
+
+.session--bg-features .card-icon-wrap {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
+}
+
+.session--bg-features .card-title {
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.session--bg-features .card-text {
+  font-size: 0.98rem;
+}
+
+/* Fonctionnalités : un peu moins large (colonnes plus “serrées”) */
+.session--bg-features .session-cards {
+  grid-template-columns: repeat(3, minmax(0, 320px)); /* cards moins larges */
+  justify-content: center; /* centre les 3 colonnes */
+}
+
+/* Session Profils : cards un peu plus étroites */
+.session--bg-profiles .session-cards {
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.session--bg-profiles .card {
+  padding: 30px 26px;
+}
+
+.session--bg-profiles .card-icon-wrap {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 22px;
+}
+
+.session--bg-profiles .card-title {
+  font-size: 1.45rem;
+}
+
+.session--bg-profiles .card-text {
+  font-size: 1.08rem;
 }
 
 .session-cards--single {

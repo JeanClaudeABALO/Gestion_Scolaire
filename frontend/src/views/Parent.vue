@@ -1,5 +1,14 @@
 <template>
   <div class="parent-container">
+    <video
+      class="parent-bg-video"
+      src="/parent.webm"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+    ></video>
     <header class="header">
       <h1>Espace Parent</h1>
       <button @click="logout" class="btn-logout">Déconnexion</button>
@@ -8,6 +17,47 @@
     <div class="content">
       <div v-if="loading" class="loading">Chargement...</div>
       <div v-else-if="eleve" class="eleve-info">
+        <div class="welcome-card">
+          <div class="welcome-top">
+            <h2 class="welcome-title">Bienvenue dans l’Espace Parent</h2>
+            <p class="welcome-subtitle">
+              Retrouvez ici les informations et les résultats de votre enfant, trimestre par trimestre.
+            </p>
+          </div>
+          <div class="welcome-highlight">
+            <span class="welcome-label">Élève</span>
+            <span class="welcome-name">{{ eleve.prenom }} {{ eleve.nom }}</span>
+            <span class="welcome-meta">— {{ eleve.classe_nom }} • {{ eleve.filiere_nom }}</span>
+          </div>
+        </div>
+
+        <div class="filters-card" v-if="notesData && notesData.matieres && notesData.matieres.length">
+          <div class="filters-head">
+            <h3 class="filters-title">Filtres</h3>
+            <button type="button" class="filters-reset" @click="resetFilters">Réinitialiser</button>
+          </div>
+          <div class="filters-grid">
+            <div class="filter-item">
+              <label for="filter-matiere">Matière</label>
+              <select id="filter-matiere" v-model="selectedMatiereId">
+                <option value="all">Toutes les matières</option>
+                <option v-for="m in matieresOptions" :key="m.matiere_id" :value="String(m.matiere_id)">
+                  {{ m.matiere_nom }}
+                </option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label for="filter-trimestre">Trimestre</label>
+              <select id="filter-trimestre" v-model="selectedTrimestre">
+                <option value="all">Tous</option>
+                <option value="1">Trimestre 1</option>
+                <option value="2">Trimestre 2</option>
+                <option value="3">Trimestre 3</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <div class="info-card">
           <h2>Informations de l'élève</h2>
           <div class="info-grid">
@@ -31,9 +81,9 @@
           <div v-if="notesLoading" class="loading">Chargement des notes...</div>
           <div v-else-if="!notesData || notesData.matieres.length === 0" class="empty">Aucune note enregistrée</div>
           <div v-else>
-            <div v-for="matiere in notesData.matieres" :key="matiere.matiere_id" class="matiere-section">
+            <div v-for="matiere in filteredMatieres" :key="matiere.matiere_id" class="matiere-section">
               <h3 class="matiere-title">{{ matiere.matiere_nom }}</h3>
-              <div v-for="trimestre in matiere.trimestres" :key="trimestre.trimestre" class="trimestre-section">
+              <div v-for="trimestre in filteredTrimestres(matiere.trimestres)" :key="trimestre.trimestre" class="trimestre-section">
                 <h4 class="trimestre-title">Trimestre {{ trimestre.trimestre }}</h4>
                 <div class="table-container">
                   <table class="notes-table">
@@ -89,7 +139,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import api from '../services/api'
@@ -103,6 +153,30 @@ export default {
     const notesData = ref(null)
     const loading = ref(true)
     const notesLoading = ref(true)
+    const selectedMatiereId = ref('all')
+    const selectedTrimestre = ref('all')
+
+    const matieresOptions = computed(() => {
+      if (!notesData.value || !notesData.value.matieres) return []
+      return notesData.value.matieres.map(m => ({ matiere_id: m.matiere_id, matiere_nom: m.matiere_nom }))
+    })
+
+    const filteredMatieres = computed(() => {
+      const matieres = notesData.value?.matieres || []
+      if (selectedMatiereId.value === 'all') return matieres
+      return matieres.filter(m => String(m.matiere_id) === String(selectedMatiereId.value))
+    })
+
+    const filteredTrimestres = (trimestres) => {
+      if (!Array.isArray(trimestres)) return []
+      if (selectedTrimestre.value === 'all') return trimestres
+      return trimestres.filter(t => String(t.trimestre) === String(selectedTrimestre.value))
+    }
+
+    const resetFilters = () => {
+      selectedMatiereId.value = 'all'
+      selectedTrimestre.value = 'all'
+    }
 
     const loadEleveInfo = async () => {
       try {
@@ -142,11 +216,24 @@ export default {
       await loadNotes()
     })
 
+    watch(notesData, (val) => {
+      // Si les notes changent, s'assurer que les filtres restent valides
+      if (!val || !val.matieres || val.matieres.length === 0) {
+        resetFilters()
+      }
+    })
+
     return {
       eleve,
       notesData,
       loading,
       notesLoading,
+      selectedMatiereId,
+      selectedTrimestre,
+      matieresOptions,
+      filteredMatieres,
+      filteredTrimestres,
+      resetFilters,
       logout
     }
   }
@@ -157,15 +244,40 @@ export default {
 .parent-container {
   min-height: 100vh;
   background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
+}
+
+.parent-bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0.28;
+  pointer-events: none;
+  filter: saturate(1.05) contrast(1.05);
 }
 
 .header {
-  background: white;
-  padding: 20px 40px;
+  background: linear-gradient(135deg, var(--primary-500, #1e88e5) 0%, var(--primary-600, #1565c0) 55%, var(--primary-700, #0d47a1) 100%);
+  padding: 24px 40px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 28px rgba(13, 71, 161, 0.18);
+  position: relative;
+  z-index: 1;
+  min-height: 72px;
+}
+
+.header h1 {
+  margin: 0;
+  color: white;
+  font-weight: 900;
+  font-size: 1.25rem;
+  letter-spacing: 0.1px;
 }
 
 .btn-logout {
@@ -173,26 +285,146 @@ export default {
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  transition: background 0.3s;
+  transition: transform 0.15s ease, background 0.25s ease;
 }
 
 .btn-logout:hover {
   background: #c82333;
+  transform: translateY(-1px);
 }
 
 .content {
   max-width: 1400px;
   margin: 0 auto;
   padding: 30px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .eleve-info {
   display: flex;
   flex-direction: column;
   gap: 30px;
+}
+
+.welcome-card,
+.filters-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.welcome-title {
+  margin: 0 0 6px 0;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--primary-700, #0d47a1);
+}
+
+.welcome-subtitle {
+  margin: 0;
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.welcome-highlight {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.10), rgba(13, 71, 161, 0.06));
+  border: 1px solid rgba(30, 136, 229, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.welcome-label {
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--primary-700, #0d47a1);
+  background: rgba(255, 255, 255, 0.65);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 71, 161, 0.18);
+}
+
+.welcome-name {
+  font-weight: 900;
+  color: #111827;
+}
+
+.welcome-meta {
+  color: #374151;
+  font-weight: 600;
+}
+
+.filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filters-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.filters-reset {
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.filters-reset:hover {
+  border-color: var(--primary-600, #1565c0);
+  color: var(--primary-700, #0d47a1);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.filter-item label {
+  display: block;
+  font-weight: 800;
+  color: #374151;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.filter-item select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(148, 163, 184, 0.7);
+  outline: none;
+  font-weight: 700;
+  background: white;
+}
+
+.filter-item select:focus {
+  border-color: var(--primary-500, #1e88e5);
+  box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.18);
 }
 
 .info-card {
@@ -284,7 +516,7 @@ export default {
 }
 
 .notes-table thead {
-  background: #3498db;
+  background: linear-gradient(135deg, var(--primary-600, #1565c0), var(--primary-700, #0d47a1));
   color: white;
 }
 

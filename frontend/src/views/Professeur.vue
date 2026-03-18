@@ -1,5 +1,14 @@
 <template>
   <div class="professeur-container">
+    <video
+      class="prof-bg-video"
+      src="/prof.webm"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="auto"
+    ></video>
     <header class="header">
       <button type="button" class="btn-menu-mobile" aria-label="Menu" @click="sidebarOpen = !sidebarOpen">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -34,7 +43,7 @@
         </nav>
       </div>
 
-      <div class="main-content">
+      <div class="main-content" ref="mainContentRef">
         <!-- Vue Classes -->
         <div v-if="activeView === 'classes' && !selectedClasse" class="view">
           <h2>Mes Classes</h2>
@@ -72,10 +81,12 @@
 
           <div v-if="loadingEleves" class="loading">Chargement des données...</div>
           <div v-else-if="elevesWithNotes.length === 0" class="empty">Aucun élève dans cette classe</div>
-          <div v-else class="table-container">
-            <table class="notes-table">
+          <div v-else class="table-container" ref="elevesTableRef">
+            <div class="table-shell">
+              <table class="notes-table">
               <thead>
                 <tr>
+                  <th rowspan="2" class="index-col">N°</th>
                   <th rowspan="2">Code</th>
                   <th rowspan="2">Nom</th>
                   <th rowspan="2">Prénom</th>
@@ -84,6 +95,7 @@
                   <th rowspan="2">Coeff.</th>
                   <th rowspan="2">Moyenne</th>
                   <th rowspan="2">Moy. Coeff.</th>
+                  <th rowspan="2">Rang</th>
                   <th rowspan="2">Actions</th>
                 </tr>
                 <tr>
@@ -99,10 +111,11 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="eleve in elevesWithNotes" :key="eleve.id">
+                <tr v-for="(eleve, idx) in elevesWithNotes" :key="eleve.id" :class="{ 'female-row': eleve.sexe === 'F' }">
+                  <td class="index-cell">{{ idx + 1 }}</td>
                   <td>{{ eleve.code }}</td>
-                  <td>{{ eleve.nom }}</td>
-                  <td>{{ eleve.prenom }}</td>
+                  <td :class="{ 'female-name': eleve.sexe === 'F' }">{{ eleve.nom }}</td>
+                  <td :class="{ 'female-name': eleve.sexe === 'F' }">{{ eleve.prenom }}</td>
                   <td 
                     v-for="(note, index) in eleve.interrogations" 
                     :key="`int-${index}`" 
@@ -131,6 +144,9 @@
                   <td class="moyenne-cell" :class="{ 'no-data': eleve.moyenneCoefficientee === null }">
                     {{ eleve.moyenneCoefficientee !== null ? eleve.moyenneCoefficientee : '—' }}
                   </td>
+                  <td class="rang-cell" :class="{ 'no-data': eleve.rang === null || eleve.rang === undefined }">
+                    {{ eleve.rang !== null && eleve.rang !== undefined ? eleve.rang : '—' }}
+                  </td>
                   <td>
                     <button 
                       @click="openAddNoteModal(eleve)" 
@@ -142,7 +158,19 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+              </table>
+            </div>
+
+            <button
+              v-if="showScrollToggle"
+              type="button"
+              class="scroll-toggle-btn"
+              @click="toggleScroll"
+              :aria-label="isAtBottom ? 'Remonter en haut' : 'Descendre en bas'"
+              :title="isAtBottom ? 'Remonter en haut' : 'Descendre en bas'"
+            >
+              {{ isAtBottom ? '↑' : '↓' }}
+            </button>
           </div>
         </div>
 
@@ -258,7 +286,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import api from '../services/api'
@@ -285,6 +313,13 @@ export default {
     const editingNoteId = ref(null)
     const selectedEleve = ref(null)
     const savingNote = ref(false)
+    const mainContentRef = ref(null)
+    const elevesTableRef = ref(null)
+    const isAtBottom = ref(false)
+    const canScroll = ref(false)
+    const showScrollToggle = computed(
+      () => !!selectedClasse.value && !!selectedMatiere.value && (elevesWithNotes.value?.length || 0) > 0 && canScroll.value
+    )
     const noteForm = ref({
       eleve_id: '',
       matiere_id: '',
@@ -292,6 +327,26 @@ export default {
       type: 'Interrogation',
       valeur: ''
     })
+
+    const getScrollContainer = () => mainContentRef.value || document.documentElement
+
+    const updateScrollState = () => {
+      const el = getScrollContainer()
+      if (!el) return
+      const scrollTop = el.scrollTop || 0
+      const clientHeight = el.clientHeight || 0
+      const scrollHeight = el.scrollHeight || 0
+      canScroll.value = scrollHeight > clientHeight + 8
+      isAtBottom.value = canScroll.value ? (scrollTop + clientHeight >= scrollHeight - 8) : false
+    }
+
+    const toggleScroll = () => {
+      const el = getScrollContainer()
+      if (!el) return
+      const bottom = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0))
+      el.scrollTo({ top: isAtBottom.value ? 0 : bottom, behavior: 'smooth' })
+      window.setTimeout(updateScrollState, 250)
+    }
 
     // Matières disponibles pour le professeur (filtrées par classe si une classe est sélectionnée)
     const matieresDisponibles = computed(() => {
@@ -464,6 +519,24 @@ export default {
         return
       }
       await Promise.all([loadClasses(), loadMatieres()])
+      await nextTick()
+      updateScrollState()
+      if (mainContentRef.value) {
+        mainContentRef.value.addEventListener('scroll', updateScrollState, { passive: true })
+      }
+      window.addEventListener('resize', updateScrollState)
+    })
+
+    onUnmounted(() => {
+      if (mainContentRef.value) {
+        mainContentRef.value.removeEventListener('scroll', updateScrollState)
+      }
+      window.removeEventListener('resize', updateScrollState)
+    })
+
+    watch([elevesWithNotes, selectedClasse, selectedMatiere, selectedTrimestre], async () => {
+      await nextTick()
+      updateScrollState()
     })
 
     return {
@@ -484,6 +557,12 @@ export default {
       editingNoteId,
       selectedEleve,
       savingNote,
+      mainContentRef,
+      elevesTableRef,
+      isAtBottom,
+      canScroll,
+      showScrollToggle,
+      toggleScroll,
       noteForm,
       matieresDisponibles,
       selectClasse,
@@ -510,18 +589,33 @@ export default {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
+}
+
+.prof-bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0.26;
+  pointer-events: none;
 }
 
 .header {
   flex-shrink: 0;
-  background: white;
+  background: linear-gradient(135deg, var(--primary-500, #1e88e5) 0%, var(--primary-600, #1565c0) 60%, var(--primary-700, #0d47a1) 100%);
   padding: 24px 40px 28px;
   min-height: 72px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 28px rgba(13, 71, 161, 0.18);
   gap: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-menu-mobile {
@@ -547,6 +641,9 @@ export default {
   flex: 1;
   margin: 0;
   font-size: 1.25rem;
+  color: white;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
 }
 
 .user-info {
@@ -555,14 +652,20 @@ export default {
   gap: 20px;
 }
 
+.user-info span {
+  color: white;
+  font-weight: 800;
+}
+
 .btn-logout {
   padding: 8px 16px;
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 800;
+  transition: transform 0.15s ease, background 0.25s ease;
 }
 
 .content {
@@ -571,6 +674,8 @@ export default {
   min-height: 0;
   padding: 20px;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-overlay {
@@ -678,6 +783,8 @@ export default {
   padding: 30px;
   overflow: auto;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1;
 }
 
 .view h2 {
@@ -824,6 +931,16 @@ export default {
 .table-container {
   overflow-x: auto;
   margin-top: 20px;
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.table-shell {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.10);
 }
 
 .notes-table {
@@ -834,7 +951,7 @@ export default {
 }
 
 .notes-table thead {
-  background: #3498db;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
   color: white;
 }
 
@@ -842,7 +959,61 @@ export default {
   padding: 12px 8px;
   text-align: center;
   font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.index-col {
+  width: 56px;
+}
+
+.index-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.female-name {
+  color: #dc2626;
+  font-weight: inherit;
+}
+
+.female-row td {
+  color: #dc2626;
+}
+
+.female-row {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.scroll-toggle-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(13, 71, 161, 0.28);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.scroll-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(13, 71, 161, 0.35);
+  filter: brightness(1.05);
+}
+
+.scroll-toggle-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 12px 24px rgba(13, 71, 161, 0.25);
 }
 
 .section-header {
@@ -853,11 +1024,11 @@ export default {
 .notes-table td {
   padding: 10px 8px;
   text-align: center;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .notes-table tbody tr:hover {
-  background: #f8f9fa;
+  background: rgba(30, 136, 229, 0.06);
 }
 
 .notes-table tbody tr:nth-child(even) {
@@ -865,7 +1036,7 @@ export default {
 }
 
 .notes-table tbody tr:nth-child(even):hover {
-  background: #f0f0f0;
+  background: rgba(30, 136, 229, 0.10);
 }
 
 .note-cell {
@@ -893,6 +1064,18 @@ export default {
 }
 
 .moyenne-cell.no-data {
+  color: #999;
+  font-weight: 400;
+}
+
+.rang-cell {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary-700);
+  min-width: 56px;
+}
+
+.rang-cell.no-data {
   color: #999;
   font-weight: 400;
 }

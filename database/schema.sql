@@ -85,3 +85,14 @@ CREATE TABLE notes (
 -- Index pour améliorer les performances
 CREATE INDEX idx_notes_trimestre ON notes(trimestre);
 CREATE INDEX idx_notes_eleve_matiere_trimestre ON notes(eleve_id, matiere_id, trimestre);
+
+-- =========================
+-- Métadonnées Élèves (sexe, etc.)
+-- =========================
+CREATE TABLE IF NOT EXISTS eleves_meta (
+    eleve_id INT PRIMARY KEY,
+    sexe ENUM('F','M') NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (eleve_id) REFERENCES eleves(id)
+        ON DELETE CASCADE
+);
